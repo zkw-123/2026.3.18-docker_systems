@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>denso_bringup_overall</name>
+  <version>0.0.1</version>
+  <description>System bringup: DENSO bringup + MoveIt Servo + command interface.</description>
+
+  <maintainer email="zuo-kewei@g.ecc.u-tokyo.ac.jp">Kewei Zuo</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <export>
+  <build_type>ament_cmake</build_type>
+  </export>
+
+
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>ament_index_python</exec_depend>
+
+  <exec_depend>denso_robot_bringup</exec_depend>
+  <exec_depend>moveit_servo</exec_depend>
+  <exec_depend>control_command</exec_depend>
+
+</package>
+
