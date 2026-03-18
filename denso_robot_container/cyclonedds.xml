@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CycloneDDS>
+  <Domain>
+    <General>
+      <NetworkInterfaceAddress>wlp1s0</NetworkInterfaceAddress>
+    </General>
+    <Discovery>
+      <Ports>
+        <Base>7400</Base>
+      </Ports>
+    </Discovery>
+  </Domain>
+</CycloneDDS>
+

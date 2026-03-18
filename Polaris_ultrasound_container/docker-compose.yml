@@ -1,0 +1,37 @@
+services:
+  polaris_ultrasound:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: polaris_ultrasound
+    volumes:
+      # 挂载 ROM 文件目录
+      - ./rom_files:/opt/ndi/rom_files
+      # 挂载源代码目录
+      - ./src:/ros2_ws/src
+      # 挂载数据输出目录
+      - ./calibration_data:/ros2_ws/calibration_data
+      # 挂载设备目录
+      - /dev:/dev
+    devices:
+      # 允许访问 Polaris 设备 (通常是 USB 串口)
+      - /dev/ttyUSB0:/dev/ttyUSB0
+      # 允许访问超声设备 (视频捕获设备)
+      - /dev/video0:/dev/video0
+      # 如果有其他视频设备，也可以添加
+      - /dev/video1:/dev/video1
+    network_mode: host
+    ipc: host
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - ROS_DOMAIN_ID=1
+      - XAUTHORITY=/home/$USER/.Xauthority
+      - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+      - ROS_LOCALHOST_ONLY=0
+      - CYCLONEDDS_NETWORK_INTERFACE_ADDRESS=wlp1s0
+      - CYCLONEDDS_ALLOW_MULTICAST=true
+      - CYCLONEDDS_URI=file:cyclonedds.xml
+    privileged: true
+    # 启动命令，保持容器运行
+    command: ["bash", "-lc", "trap : TERM INT; sleep infinity & wait"]
