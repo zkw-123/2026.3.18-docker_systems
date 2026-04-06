@@ -1,0 +1,29 @@
+version: '3'
+services:
+  
+  # Combined container for sensing and visualization
+  leptrino_sensor_visualization:
+    build:
+      context: .                # Dockerfile 所在目录
+      dockerfile: Dockerfile    # 如果文件名是 "Dockerfile" 可以省略
+    image: leptrino_test        # 构建完成后镜像名
+    container_name: leptrino_sensor_visualization_container
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+    privileged: true
+    devices:
+      - "/dev/ttyACM1:/dev/ttyACM0" # Replace with the actual device path for your sensor
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix  # For GUI forwarding
+      - ./data:/ros_ws/data
+      - ./src:/ros_ws/src  # Host directory mounted to container for data persistence
+    networks:
+      - ros_network
+      
+    command: tail -f /dev/null
+      
+      
+networks:
+  ros_network:
+    driver: bridge

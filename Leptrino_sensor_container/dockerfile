@@ -1,0 +1,53 @@
+# 用 Humble（Ubuntu 22.04）做基底
+FROM ros:humble
+
+# 基础依赖
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    cmake \
+    python3 \
+    python3-pip \
+    python3-colcon-common-extensions \
+    ros-humble-rmw-cyclonedds-cpp \
+    ros-humble-geometry-msgs \
+    ros-humble-rclcpp \
+    ros-humble-rviz2 \
+    ros-humble-rqt \
+    ros-humble-rqt-plot \
+    python3-pyqt5 \
+    dos2unix \
+    && rm -rf /var/lib/apt/lists/*
+
+# 准备工作空间
+ENV ROS_WS=/ros_ws
+WORKDIR ${ROS_WS}/src
+
+# （可选）把包打进镜像。如果你在 compose 里用 volume 覆盖，这一步可以省略
+# COPY leptrino_force_torque ./leptrino_force_torque
+
+# （可选）镜像内预编译
+# WORKDIR ${ROS_WS}
+# RUN /bin/bash -lc "source /opt/ros/humble/setup.sh && colcon build"
+
+# GUI 相关的环境变量一般由 docker compose 传入更好
+ENV QT_X11_NO_MITSHM=1
+
+RUN cat <<'EOF' > /ros_entrypoint.sh
+#!/usr/bin/env bash
+set -e
+source /opt/ros/humble/setup.bash || true
+if [ -f /ros_ws/install/setup.bash ]; then
+  source /ros_ws/install/setup.bash
+fi
+if [ $# -gt 0 ]; then
+  exec "$@"
+else
+  exec bash -i
+fi
+EOF
+
+RUN dos2unix /ros_entrypoint.sh && chmod +x /ros_entrypoint.sh
+
+# 默认啥也不跑，交给 docker compose 里的 command
+CMD []
+

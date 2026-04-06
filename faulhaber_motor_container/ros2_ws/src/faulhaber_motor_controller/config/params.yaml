@@ -1,0 +1,6 @@
+faulhaber_motor_controller:
+  ros__parameters:
+    serial_port: "/dev/ttyUSB0"  # 串口设备路径
+    baud_rate: 9600              # 波特率
+    speed_scaling: 100.0         # 速度缩放比例
+

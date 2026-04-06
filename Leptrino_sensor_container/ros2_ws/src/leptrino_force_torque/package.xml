@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>leptrino_force_torque</name>
+  <version>1.0.0</version>
+  <description>The leptrino_force_torque package</description>
+
+  <!-- Maintainer information -->
+  <maintainer email="mahisorn.w@hiveground.com">Mahisorn Wongphati</maintainer>
+
+  <!-- License information -->
+  <license>BSD</license>
+
+  <!-- Dependencies -->
+  <depend>rclcpp</depend>
+  <depend>geometry_msgs</depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <!-- Export section -->
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

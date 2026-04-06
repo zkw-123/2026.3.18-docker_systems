@@ -1,0 +1,24 @@
+version: '3'
+services:
+  faulhaber_motor_controller:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: faulhaber_motor_controller_image
+    container_name: faulhaber_motor_controller_container
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+    devices:
+      - "/dev/ttyUSB1:/dev/ttyUSB0"
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - ./src:/ros_ws/src
+    networks:
+      - ros_network
+    command: tail -f /dev/null   # 保证容器一直运行，不做其他事
+
+networks:
+  ros_network:
+    driver: bridge
+
