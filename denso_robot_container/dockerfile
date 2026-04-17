@@ -16,16 +16,19 @@ RUN apt update && apt install -y \
     ros-humble-joint-state-publisher-gui \
     net-tools iputils-ping nano \
     ros-humble-demo-nodes-cpp ros-humble-demo-nodes-py \
-    ros-humble-rmw-cyclonedds-cpp
-    
-RUN apt update && apt install -y \
+    ros-humble-rmw-cyclonedds-cpp\
     net-tools iputils-ping nano \
     ros-humble-moveit \
     ros-humble-moveit-common \
     ros-humble-moveit-ros-move-group \
     ros-humble-moveit-ros-planning \
     ros-humble-moveit-ros-visualization \
-    && apt clean
+    gazebo \
+    ros-humble-gazebo-ros \
+    ros-humble-gazebo-ros-pkgs \
+    ros-humble-gazebo-ros2-control\
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # 设置 locale
 RUN locale-gen en_US en_US.UTF-8 && \
@@ -50,8 +53,8 @@ RUN mkdir -p /workspace/ws_denso_ros2/src && \
 
 # 切换到普通用户并设为默认工作目录
 USER dockeruser
-WORKDIR /workspace/denso_ros2_ws
+WORKDIR /workspace
 
 # 默认 source 环境配置
 RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc && \
-    echo "source /workspace/denso_ros2_ws/install/setup.bash" >> ~/.bashrc
+    echo "source /workspace/install/setup.bash" >> ~/.bashrc
