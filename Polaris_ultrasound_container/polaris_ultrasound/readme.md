@@ -2,86 +2,155 @@
 
 ## 1. Package Role
 
-`polaris_ultrasound` is a ROS 2 package for:
+`polaris_ultrasound` provides reusable ROS 2 modules for:
 
 - reading Polaris tracking data
 - reading ultrasound images
-- recording calibration data
 - replaying recorded ultrasound datasets
-- computing ultrasound stability index `Sk`
-- estimating target position in ultrasound images
+- computing ultrasound-side image stability
+- estimating target position from ultrasound images
 
-This package provides the basic perception-side data input for ultrasound-guided experiments.
+This package focuses on **modular perception functions**.  
+Task-specific workflows such as calibration or phantom experiments should be handled by dedicated launch files.
 
 ---
 
-## 2. Main Nodes
+## 2. Package Structure
+
+The package is organized into two levels:
+
+### Core nodes
+These nodes provide reusable low-level functions:
+
+- `polaris_reader`  
+  Reads tool poses from the Polaris tracking system.
+
+- `ultrasound_reader`  
+  Reads live ultrasound images from the video device.
+
+- `us_dataset_player_node`  
+  Replays recorded ultrasound datasets for offline testing.
+
+- `us_stability_node`  
+  Computes the ultrasound stability / reliability index from the input image.
+
+- `us_target_estimator_node`  
+  Estimates target position from ultrasound images.
+
+### Launch files
+These launch files combine the core nodes into complete workflows:
+
+- `live_perception.launch.py`  
+  For real-time Polaris + ultrasound input.
+
+- `offline_replay.launch.py`  
+  For dataset replay and offline debugging.
+
+- `calibration.launch.py`  
+  For calibration-related workflows.
+
+- `phantom_experiment.launch.py`  
+  For phantom experiment workflows.
+
+---
+
+## 3. Node Functions
 
 ### `polaris_reader`
-Reads tracking data from the Polaris system.
+Reads ROM-based tool tracking data from the Polaris system.
 
-**Inputs**
-- ROM files
-- tool names
-
-**Outputs**
+**Main outputs**
 - `/polaris/phantom`
 - `/polaris/stylus`
 - `/polaris/raw`
 
----
-
 ### `ultrasound_reader`
-Reads real-time ultrasound images from the video device.
+Reads live ultrasound images from the selected video device.
 
-**Output**
+**Main output**
 - `/us_img`
 
----
-
-### `calibration_recorder`
-Records calibration-related data during experiments.
-
----
-
-### `phantom_experiment`
-Collects stylus / phantom point data for calibration experiments.
-
-**Save path**
-- `/ros2_ws/calibration_data/polaris/stylus_phantom/`
-
----
-
 ### `us_dataset_player_node`
-Replays recorded ultrasound datasets instead of using a live ultrasound device.
+Publishes recorded ultrasound images and related pose data.
 
-**Outputs**
+**Main outputs**
 - `/us_img`
 - `/probe_pose`
 
-Use this node for offline testing and debugging.
-
----
-
 ### `us_stability_node`
-Computes ultrasound stability index `Sk` from the ultrasound image and ROI mask.
+Computes the ultrasound stability index from the ultrasound image and ROI mask.
 
-**Inputs**
-- ultrasound image topic
-- ROI mask
-
-**Output**
+**Main output**
 - `/us_stability`
 
----
-
 ### `us_target_estimator_node`
-Estimates the target position from ultrasound images.
+Estimates the target position from the ultrasound image stream.
 
 ---
 
-## 3. Build
+## 4. Launch Functions
 
+### `live_perception.launch.py`
+Starts the basic real-time perception pipeline using live Polaris and ultrasound input.
+
+Typical use:
+- online experiment
+- real-time debugging
+- live target observation
+
+### `offline_replay.launch.py`
+Starts the perception pipeline using recorded datasets instead of live hardware.
+
+Typical use:
+- offline analysis
+- debugging
+- parameter tuning
+
+### `calibration.launch.py`
+Starts the nodes required for calibration workflows.
+
+Typical use:
+- tool calibration
+- probe / phantom calibration
+- data collection for calibration
+
+### `phantom_experiment.launch.py`
+Starts the nodes required for phantom experiments.
+
+Typical use:
+- structured phantom tests
+- data recording under fixed experimental settings
+
+---
+
+## 5. How to Use
+
+Before building or launching the package, first confirm that the hardware connection is correct.  
+This is important because wrong serial or video device mapping will cause later steps inside the container to fail.
+
+### Step 1: Check hardware connection on the host
+Confirm that the required devices are detected correctly.
+
+For Polaris serial device:
+```bash
+ls /dev/ttyUSB*
+dmesg | grep ttyUSB
+```
+
+For ultrasound video device:
+```bash
+ls /dev/video*
+v4l2-ctl --list-devices
+```
+
+Make sure:
+- the Polaris serial port exists and matches the expected device
+- the ultrasound device exists and matches the expected video id
+
+### Step 2: Start the container
+Build and enter the container after confirming the device mapping.
+
+### Step 3: Build the workspace
 ```bash
 cd /ros2_ws
 source /opt/ros/humble/setup.bash
@@ -89,135 +158,34 @@ colcon build
 source install/setup.bash
 ```
 
----
+### Step 4: Run the required workflow
+Use the launch file that matches your purpose.
 
-## 4. Typical Usage
-
-### 4.1 Real-time experiment
-
-**Step 1: Start Polaris reader**
+For live perception:
 ```bash
-ros2 run polaris_ultrasound polaris_reader --ros-args \
-  -p rom_path:="/opt/ndi/rom_files/8700449_phantom.rom,/opt/ndi/rom_files/8700340_stylus.rom" \
-  -p tool_names:="phantom,stylus"
+ros2 launch polaris_ultrasound live_perception.launch.py
 ```
 
-**Step 2: Start ultrasound reader**
+For offline replay:
 ```bash
-ros2 run polaris_ultrasound ultrasound_reader --ros-args \
-  -p device_id:=6
+ros2 launch polaris_ultrasound offline_replay.launch.py
 ```
 
-**Step 3: Start stability estimation if needed**
+For calibration:
 ```bash
-ros2 run polaris_ultrasound us_stability_node --ros-args \
-  -p image_topic:=/us_img \
-  -p stability_topic:=/us_stability \
-  -p mask_path:=/ros2_ws/src/silicon_exp1/us_mask.png \
-  -p alpha:=0.3 \
-  -p c_sp_max:=17.6 \
-  -p c_grad_max:=7.1
+ros2 launch polaris_ultrasound calibration.launch.py
 ```
 
-**Step 4: Start target estimation if needed**
+For phantom experiment:
 ```bash
-ros2 run polaris_ultrasound us_target_estimator_node
+ros2 launch polaris_ultrasound phantom_experiment.launch.py
 ```
 
 ---
 
-### 4.2 Offline dataset test
+## 6. Quick Hardware and Topic Checks
 
-**Step 1: Replay dataset**
-```bash
-ros2 run polaris_ultrasound us_dataset_player_node --ros-args \
-  -p data_dir:=/ros2_ws/src/silicon_exp1/20250810_072526 \
-  -p fps:=10.0 \
-  -p json_mode:=fixed_dir \
-  -p json_dir:=/ros2_ws/src/silicon_exp1 \
-  -p loop:=false
-```
-
-**Step 2: Run stability estimation if needed**
-```bash
-ros2 run polaris_ultrasound us_stability_node --ros-args \
-  -p image_topic:=/us_img \
-  -p stability_topic:=/us_stability \
-  -p mask_path:=/ros2_ws/src/silicon_exp1/us_mask.png \
-  -p alpha:=0.3 \
-  -p c_sp_max:=17.6 \
-  -p c_grad_max:=7.1
-```
-
-**Step 3: Run target estimation if needed**
-```bash
-ros2 run polaris_ultrasound us_target_estimator_node
-```
-
----
-
-## 5. Calibration Data Collection
-
-Run:
-
-```bash
-ros2 run polaris_ultrasound phantom_experiment
-```
-
-The recorded data will be saved to:
-
-```bash
-/ros2_ws/calibration_data/polaris/stylus_phantom/
-```
-
----
-
-## 6. ROI Mask Tool
-
-Use `draw_us_mask.py` to create the ROI mask for `us_stability_node`.
-
-```bash
-python3 draw_us_mask.py \
-  --image /ros2_ws/src/silicon_exp1/20250810_072526/us_000001.png \
-  --output /ros2_ws/src/silicon_exp1/us_mask.png
-```
-
-**Controls**
-- Left click: add vertex
-- Right click: close polygon
-- `r`: reset
-- `s`: save
-- `ESC`: quit
-
----
-
-## 7. Important Parameters
-
-### `polaris_reader`
-- `rom_path`: Polaris ROM file paths
-- `tool_names`: tool names corresponding to the ROM files
-
-### `ultrasound_reader`
-- `device_id`: ultrasound video device id
-
-### `us_dataset_player_node`
-- `data_dir`: dataset directory
-- `fps`: replay frame rate
-- `json_mode`: `paired` / `fixed_dir` / `fixed_single`
-- `json_dir`: JSON directory
-- `loop`: whether to replay repeatedly
-
-### `us_stability_node`
-- `image_topic`: input ultrasound image topic
-- `stability_topic`: output stability topic
-- `mask_path`: ROI mask path
-- `alpha`: smoothing factor
-- `c_sp_max`: normalization upper bound for intensity variation
-- `c_grad_max`: normalization upper bound for gradient magnitude
-
----
-
-## 8. Quick Checks
+After launching, confirm that data is being published correctly.
 
 ```bash
 ros2 topic echo /polaris/phantom
@@ -227,12 +195,8 @@ ros2 topic echo /us_stability
 ros2 topic echo /probe_pose
 ```
 
----
-
-## 9. Notes
-
-- Use `ultrasound_reader` for live ultrasound input.
-- Use `us_dataset_player_node` for offline replay.
-- Use `us_stability_node` only when `Sk` is needed.
-- Use `phantom_experiment` for stylus / phantom point collection.
-- Rebuild the workspace after modifying the package.
+If no data appears:
+- re-check the serial device for Polaris
+- re-check the video device id for ultrasound
+- confirm that the device mapping into the container is correct
+- confirm that the selected launch file matches the intended workflow
