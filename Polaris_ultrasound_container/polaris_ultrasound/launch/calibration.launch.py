@@ -16,12 +16,12 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument(
             'rom_path',
-            default_value='/opt/ndi/rom_files/8700449_phantom.rom,/opt/ndi/rom_files/8700340_stylus.rom',
+            default_value='/workspace/src/rom_files/8700449_phantom.rom,/workspace/src/rom_files/8700338_probe.rom',
             description='Comma-separated ROM file paths'
         ),
         DeclareLaunchArgument(
             'tool_names',
-            default_value='phantom,stylus',
+            default_value='phantom,probe',
             description='Comma-separated tool names'
         ),
         DeclareLaunchArgument(
@@ -31,7 +31,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'save_path',
-            default_value='/ros2_ws/calibration_data',
+            default_value='/workspace/data/calibration_data',
             description='Directory to save calibration data'
         ),
         DeclareLaunchArgument(
