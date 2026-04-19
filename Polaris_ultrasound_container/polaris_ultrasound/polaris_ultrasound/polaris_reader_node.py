@@ -1,141 +1,146 @@
-#!/usr/bin/env python3
-# coding: UTF-8
+import json
+import time
+from typing import List, Dict, Any
 
 import rclpy
 from rclpy.node import Node
-import sys
-import numpy as np
-import argparse
-import threading
-import json
 from std_msgs.msg import String
+
 from sksurgerynditracker.nditracker import NDITracker
 
-class PolarisReader:
-    def __init__(self, rom_paths):
-        self.rom_paths = rom_paths
-        self.SETTINGS = {
-            "tracker type": "polaris",
-            "romfiles": self.rom_paths,
-            "serial port": "/dev/ttyUSB0"
+
+class PolarisReaderNode(Node):
+    def __init__(self):
+        super().__init__('polaris_reader')
+
+        # ---------------- Parameters ----------------
+        self.declare_parameter('rom_path', '')
+        self.declare_parameter('tool_names', '')
+        self.declare_parameter('serial_port', '/dev/ttyUSB0')
+        self.declare_parameter('output_topic', 'ndi_transforms')
+        self.declare_parameter('frame_id', 'polaris')
+        self.declare_parameter('publish_rate', 20.0)
+
+        rom_path_str = self.get_parameter('rom_path').get_parameter_value().string_value
+        tool_names_str = self.get_parameter('tool_names').get_parameter_value().string_value
+        self.serial_port = self.get_parameter('serial_port').get_parameter_value().string_value
+        self.output_topic = self.get_parameter('output_topic').get_parameter_value().string_value
+        self.frame_id = self.get_parameter('frame_id').get_parameter_value().string_value
+        self.publish_rate = self.get_parameter('publish_rate').get_parameter_value().double_value
+
+        self.rom_files = [x.strip() for x in rom_path_str.split(',') if x.strip()]
+        self.tool_names = [x.strip() for x in tool_names_str.split(',') if x.strip()]
+
+        if not self.rom_files:
+            raise ValueError('Parameter "rom_path" is empty. Please provide at least one ROM file.')
+        if not self.tool_names:
+            raise ValueError('Parameter "tool_names" is empty. Please provide at least one tool name.')
+        if len(self.rom_files) != len(self.tool_names):
+            raise ValueError(
+                f'rom_path count ({len(self.rom_files)}) does not match tool_names count ({len(self.tool_names)}).'
+            )
+
+        # ---------------- Publisher ----------------
+        self.publisher_ = self.create_publisher(String, self.output_topic, 10)
+
+        # ---------------- Tracker ----------------
+        tracker_config = {
+            'tracker type': 'polaris',
+            'romfiles': self.rom_files,
+            'serial port': self.serial_port,
         }
-        self.TRACKER = NDITracker(self.SETTINGS)
 
-    def start(self):
-        self.TRACKER.start_tracking()
+        self.get_logger().info(f'Initializing Polaris tracker on {self.serial_port}')
+        self.get_logger().info(f'ROM files: {self.rom_files}')
+        self.get_logger().info(f'Tool names: {self.tool_names}')
+        self.get_logger().info(f'Output topic: {self.output_topic}')
 
-    def stop(self):
-        self.TRACKER.stop_tracking()
-        self.TRACKER.close()
+        self.tracker = NDITracker(tracker_config)
+        self.tracker.start_tracking()
 
-    def get_frame(self):
-        return self.TRACKER.get_frame()
+        # ---------------- Timer ----------------
+        if self.publish_rate <= 0.0:
+            raise ValueError('publish_rate must be > 0')
+        self.timer = self.create_timer(1.0 / self.publish_rate, self.timer_callback)
 
-class ROS2PolarisReaderNode(Node):
-    def __init__(self, rom_paths, tool_names):
-        super().__init__('ros2_polaris_reader')
-
-        # 自动填充 tool_names 不足
-        if len(tool_names) < len(rom_paths):
-            for i in range(len(tool_names), len(rom_paths)):
-                tool_names.append(f"tool{i}")
-
-        self.tool_names = tool_names
-        self.rom_paths = rom_paths
-        self.polaris_reader = PolarisReader(rom_paths)
-
-        self.publisher = self.create_publisher(String, 'ndi_transforms', 10)
-        self.frame_counter = 0
-
-        self.get_logger().info("ROS2 Polaris Reader initialized")
-        self.get_logger().info(f"Using ROM files: {self.rom_paths}")
-        self.get_logger().info(f"Tool names: {self.tool_names}")
-        self.get_logger().info("Publishing tracking data to 'ndi_transforms' topic")
-
-    def run(self):
-        self.get_logger().info("Starting Polaris tracking...")
-        thread = threading.Thread(target=self.tracking_loop, daemon=True)
-        thread.start()
-
-    def tracking_loop(self):
+    def timer_callback(self):
         try:
-            self.polaris_reader.start()
-            while rclpy.ok():
-                port_handles, timestamps, framenumbers, trackings, qualities = self.polaris_reader.get_frame()
-
-                for i, timestamp in enumerate(timestamps):
-                    print(f"[{i}] Tool: {self.tool_names[i] if i < len(self.tool_names) else f'tool{i}'}")
-                    print(f"Timestamp: {timestamp}")
-                    print(trackings[i])
-
-                self.publish_tracking_data(port_handles, timestamps, framenumbers, trackings, qualities)
-                self.frame_counter += 1
+            frame = self.tracker.get_frame()
         except Exception as e:
-            self.get_logger().error(f"Error in tracking loop: {str(e)}")
-        finally:
-            try:
-                self.polaris_reader.stop()
-                self.get_logger().info("Polaris tracking stopped")
-            except Exception as e:
-                self.get_logger().error(f"Error stopping tracker: {str(e)}")
+            self.get_logger().error(f'Failed to get frame from Polaris: {e}')
+            return
 
-    def publish_tracking_data(self, port_handles, timestamps, framenumbers, trackings, qualities):
-        try:
-            now = self.get_clock().now().to_msg()
-            current_timestamp = now.sec + now.nanosec / 1e9
+        if frame is None or len(frame) < 4:
+            self.get_logger().warn('Invalid frame received from Polaris.')
+            return
 
-            transforms_data = []
-            for i, tracking in enumerate(trackings):
-                if i < len(port_handles):
-                    matrix = tracking.tolist() if isinstance(tracking, np.ndarray) else tracking
-                    transform_info = {
-                        "tool_id": int(port_handles[i]) if isinstance(port_handles[i], (int, np.integer)) else str(port_handles[i]),
-                        "tool_name": self.tool_names[i] if i < len(self.tool_names) else f"tool{i}",
-                        "quality": float(qualities[i]) if i < len(qualities) else 0.0,
-                        "matrix": matrix
-                    }
-                    if isinstance(tracking, np.ndarray) and tracking.shape == (4, 4):
-                        transform_info["translation"] = tracking[:3, 3].tolist()
-                    transforms_data.append(transform_info)
+        port_handles, timestamps, framenumbers, tracking, quality = frame
 
-            data = {
-                "timestamp": current_timestamp,
-                "original_timestamp": str(timestamps[0]) if timestamps else "",
-                "frame_number": self.frame_counter,
-                "transforms": transforms_data
+        payload = {
+            'frame_id': self.frame_id,
+            'timestamp_ros_sec': self.get_clock().now().nanoseconds * 1e-9,
+            'tracker_timestamp': timestamps,
+            'frame_number': framenumbers,
+            'tools': [],
+        }
+
+        for i, tool_name in enumerate(self.tool_names):
+            tool_data: Dict[str, Any] = {
+                'tool_name': tool_name,
+                'valid': False,
+                'quality': None,
+                'matrix': None,
+                'translation': None,
+                'rotation': None,
             }
 
-            msg = String()
-            msg.data = json.dumps(data)
-            self.publisher.publish(msg)
+            if i < len(tracking) and tracking[i] is not None:
+                mat = tracking[i]
+                tool_data['valid'] = True
+                tool_data['matrix'] = mat.tolist()
+                tool_data['translation'] = mat[:3, 3].tolist()
+                tool_data['rotation'] = mat[:3, :3].tolist()
+
+            if i < len(quality):
+                try:
+                    tool_data['quality'] = float(quality[i])
+                except Exception:
+                    tool_data['quality'] = None
+
+            payload['tools'].append(tool_data)
+
+        msg = String()
+        msg.data = json.dumps(payload)
+        self.publisher_.publish(msg)
+
+    def destroy_node(self):
+        try:
+            if hasattr(self, 'tracker'):
+                self.tracker.stop_tracking()
+                self.tracker.close()
         except Exception as e:
-            self.get_logger().error(f"Error publishing tracking data: {str(e)}")
+            self.get_logger().warn(f'Error while closing Polaris tracker: {e}')
+        super().destroy_node()
 
 
 def main(args=None):
     rclpy.init(args=args)
-
-    node = rclpy.create_node('ros2_polaris_reader_temp')
-    rom_path_str = node.declare_parameter('rom_path', '').get_parameter_value().string_value
-    tool_names_str = node.declare_parameter('tool_names', '').get_parameter_value().string_value
-    node.destroy_node()  # 释放这个临时节点
-
-    rom_paths = rom_path_str.split(',') if rom_path_str else []
-    tool_names = tool_names_str.split(',') if tool_names_str else []
-
-    if len(rom_paths) == 0:
-        print("❗ Error: At least one rom_path must be provided (comma-separated)")
-        rclpy.shutdown()
-        sys.exit(1)
-
+    node = None
     try:
-        node = ROS2PolarisReaderNode(rom_paths, tool_names)
-        node.run()
+        node = PolarisReaderNode()
         rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
     except Exception as e:
-        print(f"Error: {str(e)}")
+        if node is not None:
+            node.get_logger().error(f'Polaris reader failed: {e}')
+        else:
+            print(f'Polaris reader failed before node init: {e}')
     finally:
+        if node is not None:
+            node.destroy_node()
         rclpy.shutdown()
+
 
 if __name__ == '__main__':
     main()
