@@ -9,6 +9,7 @@
 - replaying recorded ultrasound datasets
 - computing ultrasound image stability
 - estimating target position from ultrasound images
+- recording synchronized ultrasound and Polaris data for calibration
 
 This package is organized around **modular perception functions**.  
 Task-specific workflows such as calibration should be handled through dedicated launch files.
@@ -57,7 +58,7 @@ These nodes provide reusable low-level functions:
 
 ### Workflow-level node
 - `calibration_recorder`  
-  Used only in the calibration workflow.
+  Records synchronized ultrasound and Polaris data for calibration.
 
 ---
 
@@ -66,26 +67,32 @@ These nodes provide reusable low-level functions:
 ### `polaris_reader`
 Reads tool tracking data from the Polaris system and publishes the result as a JSON string topic.
 
-**Main parameter**
+**Main parameters**
 - `rom_path`
 - `tool_names`
 - `serial_port`
 - `output_topic`
+- `publish_rate`
 
 **Main output**
 - `ndi_transforms`
+
+**Notes**
+- `rom_path` should be given as a comma-separated string.
+- `tool_names` should also be given as a comma-separated string in the same order.
 
 ---
 
 ### `ultrasound_reader`
 Reads real-time ultrasound images from the selected video device.
 
-**Main parameter**
+**Main parameters**
 - `device_id`
 - `image_topic`
 - `roi_topic`
 - `publish_roi`
 - `frame_rate`
+- `show_image`
 
 **Main outputs**
 - `/us_img`
@@ -96,7 +103,7 @@ Reads real-time ultrasound images from the selected video device.
 ### `us_dataset_player_node`
 Replays recorded ultrasound image datasets and optional probe pose data.
 
-**Main parameter**
+**Main parameters**
 - `data_dir`
 - `json_mode`
 - `json_dir`
@@ -113,7 +120,7 @@ Replays recorded ultrasound image datasets and optional probe pose data.
 ### `us_stability_node`
 Computes a stability index from the ultrasound image inside the selected ROI.
 
-**Main parameter**
+**Main parameters**
 - `image_topic`
 - `stability_topic`
 - `mask_path`
@@ -129,7 +136,7 @@ Computes a stability index from the ultrasound image inside the selected ROI.
 ### `us_target_estimator_node`
 Estimates a target position from the ultrasound image and optionally transforms it into another coordinate frame.
 
-**Main parameter**
+**Main parameters**
 - `image_topic`
 - `target_topic`
 - `debug_image_topic`
@@ -139,6 +146,25 @@ Estimates a target position from the ultrasound image and optionally transforms 
 **Main outputs**
 - `/target_point`
 - `/us_target_debug`
+
+---
+
+### `calibration_recorder`
+Records ultrasound frames and matched Polaris transforms for calibration.
+
+**Main parameters**
+- `device_id`
+- `save_path`
+- `frame_rate`
+- `tool_names`
+- `record_time`
+- `polaris_topic`
+
+**Main behavior**
+- saves ultrasound images under `ultrasound/<session_timestamp>/`
+- saves Polaris transforms under `polaris/<session_timestamp>/`
+- prints recording progress during runtime
+- prints Polaris status during runtime so marker validity can be checked
 
 ---
 
@@ -186,26 +212,51 @@ Use this launch for:
 
 ---
 
-## 5. Before Use: Check Hardware Connection First
+## 5. Before Running
 
-Before building or launching the package, first confirm that the hardware connection is correct.  
-This should be done on the host side before entering the container, otherwise later debugging becomes unnecessarily difficult.
+Before building or launching the package, first confirm that the hardware connection and user permissions are correct.
 
-### Check Polaris serial device
+### 5.1 Check Polaris serial device
+On the host:
+
 ```bash
 ls /dev/ttyUSB*
-dmesg | grep ttyUSB
+sudo dmesg | grep ttyUSB
 ```
 
-### Check ultrasound video device
+### 5.2 Check ultrasound video device
+On the host:
+
 ```bash
 ls /dev/video*
 v4l2-ctl --list-devices
 ```
 
-Make sure:
-- the Polaris serial port exists and matches the expected device
-- the ultrasound device exists and matches the expected video id
+### 5.3 Check serial permission inside the container
+Inside the container:
+
+```bash
+ls -l /dev/ttyUSB0
+id dockeruser
+getent group dialout
+```
+
+`dockeruser` should be in the `dialout` group.
+
+If not, add it:
+
+```bash
+sudo usermod -aG dialout dockeruser
+```
+
+Then open a new shell or re-enter the container.
+
+### 5.4 Confirm ROM file paths
+Before launching, make sure the ROM files really exist inside the container:
+
+```bash
+ls -l /workspace/src/rom_files
+```
 
 ---
 
@@ -222,20 +273,97 @@ source install/setup.bash
 
 ## 7. How to Use
 
-### 7.1 Live perception
+## 7.1 Live perception
+
+### Command
 ```bash
-ros2 launch polaris_ultrasound live_perception.launch.py
+ros2 launch polaris_ultrasound live_perception.launch.py \
+  rom_path:=/workspace/src/rom_files/8700449_phantom.rom,/workspace/src/rom_files/8700340_stylus.rom \
+  tool_names:=phantom,stylus \
+  device_id:=0 \
+  transform_json_path:=/workspace/config/ultrasound_robot_transform.json
 ```
 
-### 7.2 Offline replay
+### Main launch arguments
+- `rom_path`  
+  Comma-separated ROM file paths
+
+- `tool_names`  
+  Comma-separated tool names corresponding to `rom_path`
+
+- `device_id`  
+  Ultrasound video device id
+
+- `transform_json_path`  
+  4x4 transform json used by the target estimator
+
+- `mask_path`  
+  Optional ROI mask path
+
+- `alpha`, `c_sp_max`, `c_grad_max`  
+  Stability computation parameters
+
+---
+
+## 7.2 Offline replay
+
+### Command
 ```bash
-ros2 launch polaris_ultrasound offline_replay.launch.py
+ros2 launch polaris_ultrasound offline_replay.launch.py \
+  data_dir:=/workspace/data/sample_dataset \
+  json_mode:=fixed_dir \
+  json_dir:=/workspace/data/sample_pose \
+  loop:=false \
+  mask_path:=/workspace/data/us_mask.png \
+  transform_json_path:=/workspace/config/ultrasound_robot_transform.json
 ```
 
-### 7.3 Calibration
+### Main launch arguments
+- `data_dir`  
+  Directory containing replay images
+
+- `json_mode`  
+  `paired`, `fixed_dir`, or `fixed_single`
+
+- `json_dir`  
+  Directory containing pose json files when `json_mode=fixed_dir`
+
+- `json_file`  
+  Single json file when `json_mode=fixed_single`
+
+- `fps`
+- `loop`
+- `mask_path`
+- `transform_json_path`
+
+---
+
+## 7.3 Calibration
+
+### Command
 ```bash
-ros2 launch polaris_ultrasound calibration.launch.py
+ros2 launch polaris_ultrasound calibration.launch.py \
+  rom_path:=/workspace/src/rom_files/8700449_phantom.rom,/workspace/src/rom_files/8700340_stylus.rom \
+  tool_names:=phantom,stylus \
+  device_id:=0 \
+  save_path:=/workspace/data/calibration_data \
+  frame_rate:=30.0 \
+  record_time:=60.0
 ```
+
+### Main launch arguments
+- `rom_path`
+- `tool_names`
+- `device_id`
+- `save_path`
+- `frame_rate`
+- `record_time`
+
+### Runtime behavior
+During calibration, the recorder will:
+- print recording progress
+- print Polaris tool status
+- only save Polaris frames when all requested tools are present and valid
 
 ---
 
@@ -255,6 +383,8 @@ If no data appears:
 - re-check the serial device for Polaris
 - re-check the video device id for ultrasound
 - confirm that the device mapping into the container is correct
+- confirm that `dockeruser` has `dialout`
+- confirm that the ROM file paths are correct
 - confirm that the selected launch file matches the intended workflow
 
 ---
@@ -264,3 +394,4 @@ If no data appears:
 - `polaris_ultrasound` is intended to provide reusable perception modules.
 - Task-specific workflows should be handled by launch files, not by mixing workflow logic into the core node layer.
 - `draw_us_mask.py` is a utility script and is not part of the core runtime pipeline.
+- `tool_names` and `rom_path` should always use the same order.
