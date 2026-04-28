@@ -12,13 +12,13 @@
       <visual>
         <origin xyz="0.000000 0.000000 0.000000" rpy="0.000000 0.000000 0.000000"/>
         <geometry>
-          <mesh filename="file://$(find vp6242_description)/meshes/base_link.dae" scale="1 1 1"/>
+          <mesh filename="file://$(find denso_robot_descriptions)/robots/$(arg model)/meshes/base_link.dae" scale="1 1 1"/>
         </geometry>
       </visual>
       <collision>
         <origin xyz="0.000000 0.000000 0.000000" rpy="0.000000 0.000000 0.000000"/>
         <geometry>
-          <mesh filename="file://$(find vp6242_description)/meshes/base_link.dae" scale="1 1 1"/>
+          <mesh filename="file://$(find denso_robot_descriptions)/robots/$(arg model)/meshes/base_link.dae" scale="1 1 1"/>
         </geometry>
       </collision>
       <inertial>
@@ -32,13 +32,13 @@
       <visual>
         <origin xyz="0.000000 0.000000 0.000000" rpy="0.000000 0.000000 0.000000"/>
         <geometry>
-          <mesh filename="file://$(find vp6242_description)/meshes/J1.dae" scale="1 1 1"/>
+          <mesh filename="file://$(find denso_robot_descriptions)/robots/$(arg model)/meshes/J1.dae" scale="1 1 1"/>
         </geometry>
       </visual>
       <collision>
         <origin xyz="0.000000 0.000000 0.000000" rpy="0.000000 0.000000 0.000000"/>
         <geometry>
-          <mesh filename="file://$(find vp6242_description)/meshes/J1.dae" scale="1 1 1"/>
+          <mesh filename="file://$(find denso_robot_descriptions)/robots/$(arg model)/meshes/J1.dae" scale="1 1 1"/>
         </geometry>
       </collision>
       <inertial>
@@ -61,13 +61,13 @@
       <visual>
         <origin xyz="0.000000 0.000000 0.000000" rpy="0.000000 0.000000 0.000000"/>
         <geometry>
-          <mesh filename="file://$(find vp6242_description)/meshes/J2.dae" scale="1 1 1"/>
+          <mesh filename="file://$(find denso_robot_descriptions)/robots/$(arg model)/meshes/J2.dae" scale="1 1 1"/>
         </geometry>
       </visual>
       <collision>
         <origin xyz="0.000000 0.000000 0.000000" rpy="0.000000 0.000000 0.000000"/>
         <geometry>
-          <mesh filename="file://$(find vp6242_description)/meshes/J2.dae" scale="1 1 1"/>
+          <mesh filename="file://$(find denso_robot_descriptions)/robots/$(arg model)/meshes/J2.dae" scale="1 1 1"/>
         </geometry>
       </collision>
       <inertial>
@@ -90,13 +90,13 @@
       <visual>
         <origin xyz="0.000000 0.000000 0.000000" rpy="0.000000 0.000000 0.000000"/>
         <geometry>
-          <mesh filename="file://$(find vp6242_description)/meshes/J3.dae" scale="1 1 1"/>
+          <mesh filename="file://$(find denso_robot_descriptions)/robots/$(arg model)/meshes/J3.dae" scale="1 1 1"/>
         </geometry>
       </visual>
       <collision>
         <origin xyz="0.000000 0.000000 0.000000" rpy="0.000000 0.000000 0.000000"/>
         <geometry>
-          <mesh filename="file://$(find vp6242_description)/meshes/J3.dae" scale="1 1 1"/>
+          <mesh filename="file://$(find denso_robot_descriptions)/robots/$(arg model)/meshes/J3.dae" scale="1 1 1"/>
         </geometry>
       </collision>
       <inertial>
@@ -119,13 +119,13 @@
       <visual>
         <origin xyz="0.000000 0.000000 0.000000" rpy="0.000000 0.000000 0.000000"/>
         <geometry>
-          <mesh filename="file://$(find vp6242_description)/meshes/J4.dae" scale="1 1 1"/>
+          <mesh filename="file://$(find denso_robot_descriptions)/robots/$(arg model)/meshes/J4.dae" scale="1 1 1"/>
         </geometry>
       </visual>
       <collision>
         <origin xyz="0.000000 0.000000 0.000000" rpy="0.000000 0.000000 0.000000"/>
         <geometry>
-          <mesh filename="file://$(find vp6242_description)/meshes/J4.dae" scale="1 1 1"/>
+          <mesh filename="file://$(find denso_robot_descriptions)/robots/$(arg model)/meshes/J4.dae" scale="1 1 1"/>
         </geometry>
       </collision>
       <inertial>
@@ -148,13 +148,13 @@
       <visual>
         <origin xyz="0.000000 0.000000 0.000000" rpy="0.000000 0.000000 0.000000"/>
         <geometry>
-          <mesh filename="file://$(find vp6242_description)/meshes/J5.dae" scale="1 1 1"/>
+          <mesh filename="file://$(find denso_robot_descriptions)/robots/$(arg model)/meshes/J5.dae" scale="1 1 1"/>
         </geometry>
       </visual>
       <collision>
         <origin xyz="0.000000 0.000000 0.000000" rpy="0.000000 0.000000 0.000000"/>
         <geometry>
-          <mesh filename="file://$(find vp6242_description)/meshes/J5.dae" scale="1 1 1"/>
+          <mesh filename="file://$(find denso_robot_descriptions)/robots/$(arg model)/meshes/J5.dae" scale="1 1 1"/>
         </geometry>
       </collision>
       <inertial>
@@ -177,13 +177,13 @@
       <visual>
         <origin xyz="0.000000 0.000000 0.000000" rpy="0.000000 0.000000 0.000000"/>
         <geometry>
-          <mesh filename="file://$(find vp6242_description)/meshes/J6.dae" scale="1 1 1"/>
+          <mesh filename="file://$(find denso_robot_descriptions)/robots/$(arg model)/meshes/J6.dae" scale="1 1 1"/>
         </geometry>
       </visual>
       <collision>
         <origin xyz="0.000000 0.000000 0.000000" rpy="0.000000 0.000000 0.000000"/>
         <geometry>
-          <mesh filename="file://$(find vp6242_description)/meshes/J6.dae" scale="1 1 1"/>
+          <mesh filename="file://$(find denso_robot_descriptions)/robots/$(arg model)/meshes/J6.dae" scale="1 1 1"/>
         </geometry>
       </collision>
       <inertial>
@@ -204,4 +204,3 @@
 
   </xacro:macro>
 </robot>
-
