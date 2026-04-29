@@ -1,0 +1,46 @@
+{
+  "units": "meter",
+  "date": "2025-08-25",
+  "frames": {
+    "image": "ultrasound_image_frame",
+    "probemarker": "ndi_probe_marker_frame",
+    "polaris": "ndi_world_frame",
+    "arm_base": "robot_base_link"
+  },
+  "transforms": {
+    "T_probe_from_image": {
+      "matrix": [
+        [-6.270000e-05, -6.000000e-07,  1.269918e-01,  0.000000e+00],
+        [ 1.300000e-06,  3.590000e-05,  1.407450e-02,  0.000000e+00],
+        [ 1.700000e-06, -5.110000e-05,  6.337410e-02,  0.000000e+00],
+        [ 0.000000e+00,  0.000000e+00,  0.000000e+00,  1.000000e+00]
+      ],
+      "error_m": {
+        "mean": 0.00383,
+        "std": 0.00170,
+        "max": 0.00884
+      }
+    },
+    "T_arm_from_polaris": {
+      "matrix": [
+        [ 0.501489, -0.682853,  0.531244, 1.207879926],
+        [ 0.507153,  0.729499,  0.458941, 0.306065929],
+        [-0.700931,  0.039268,  0.712147, 1.155184829],
+        [ 0.000000,  0.000000,  0.000000, 1.000000000]
+      ],
+      "error_m": {
+        "N_inliers": 23,
+        "N_outliers": 4,
+        "mean": 0.006368,
+        "std": 0.002294,
+        "max": 0.010618,
+        "rmse": 0.006769
+      }
+    }
+  },
+  "notes": [
+    "T_probe_from_image: ultrasound image → probe marker。",
+    "T_arm_from_polaris: Polaris world → robot arm base。",
+    "所有平移量已换算为米 (m)，误差统计也对应换算为米。"
+  ]
+}
