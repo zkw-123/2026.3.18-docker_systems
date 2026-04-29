@@ -45,13 +45,10 @@ RUN pip3 install --no-cache-dir \
     scikit-surgerycore==0.7.2
 
 # 创建工作空间
-RUN mkdir -p /ros2_ws/src
-
-# 创建数据和日志目录
-RUN mkdir -p /ros2_ws/logs /ros2_ws/ultrasound_data
+RUN mkdir -p /workspace
 
 # 设置工作目录
-WORKDIR /ros2_ws
+WORKDIR /workspace
 
 # 复制入口脚本
 COPY ./entrypoint.sh /
