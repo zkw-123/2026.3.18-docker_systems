@@ -6,8 +6,8 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        USER_ID: 1000
-        GROUP_ID: 1000
+        USER_ID: 1003
+        GROUP_ID: 1003
     container_name: denso_ros2_container
     tty: true
     stdin_open: true
@@ -15,7 +15,7 @@ services:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - ${HOME}/.Xauthority:/root/.Xauthority:rw
       - ./ros2_ws:/workspace
-      - ./fastdds_udp_only.xml:/etc/fastdds.xml:ro
+      - ./cyclonedds.xml:/workspace/cyclonedds.xml:ro
     network_mode: host
     ipc: host
     environment:
@@ -24,8 +24,10 @@ services:
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=all
       - ROS_DOMAIN_ID=1
-      - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
       - ROS_LOCALHOST_ONLY=0
-      - FASTRTPS_DEFAULT_PROFILES_FILE=/etc/fastdds.xml
+      - CYCLONEDDS_NETWORK_INTERFACE_ADDRESS=enp10s0 # 确保这是你的网卡名
+      - CYCLONEDDS_ALLOW_MULTICAST=true
+      - CYCLONEDDS_URI=file:///workspace/cyclonedds.xml
 
-    user: "1000:1000"
+    user: "1003:1003"
