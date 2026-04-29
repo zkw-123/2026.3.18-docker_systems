@@ -23,6 +23,7 @@ RUN apt-get update && apt-get install -y \
     ros-humble-rqt-graph \
     ros-humble-rqt-plot \
     ros-humble-rqt-tf-tree \
+    ros-humble-rmw-cyclonedds-cpp \
     && rm -rf /var/lib/apt/lists/*
 
 # ===== Python 科学计算 & MPC 相关库 =====
@@ -40,8 +41,8 @@ ENV LANG=en_US.UTF-8
 ENV LC_ALL=en_US.UTF-8
 
 # ===== 创建普通用户（方便和宿主机 UID/GID 对齐） =====
-ARG USER_ID=1000
-ARG GROUP_ID=1000
+ARG USER_ID=1003
+ARG GROUP_ID=1003
 
 RUN groupadd -g ${GROUP_ID} dockeruser || true && \
     useradd -m -u ${USER_ID} -g ${GROUP_ID} -s /bin/bash dockeruser || true && \
