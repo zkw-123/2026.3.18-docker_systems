@@ -1,0 +1,39 @@
+carryover_validation_runner:
+  ros__parameters:
+    num_steps: 20
+    substrate_name: "substrate_A"
+
+    lateral_axis: "x"
+    dk_sequence_mode: "alternating"
+    dk_magnitude_m: 0.0005
+
+    axial_speed_mps: 0.0005
+    step_interval_s: 2.0
+    settle_time_s: 0.5
+
+    robot_command_topic: "/robot_command"
+    robot_pose_topic: "/robot_current_pose"
+    target_point_topic: "/perception/target_point"
+
+    command_mode: "move"
+
+rls_estimator:
+  ros__parameters:
+    beta0: 0.0
+    P0: 1000.0
+    forgetting_factor: 0.99
+    min_abs_dk_m: 0.00001
+    lateral_axis: "x"
+
+target_point_adapter:
+  ros__parameters:
+    enable_adapter: true
+    input_topic: "/target_3d_position"
+    output_topic: "/perception/target_point"
+    frame_id: "robot_base_link"
+    input_unit: "mm"
+
+experiment_logger:
+  ros__parameters:
+    output_dir: "/workspace/logs/carryover_validation"
+    file_prefix: "carryover_validation"
