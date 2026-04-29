@@ -140,9 +140,10 @@ docker exec -it denso_ros2_container bash
 # 终端 1：启动底层驱动或 Gazebo 仿真
 ros2 launch denso_robot_bringup denso_robot_bringup.launch.py model:=vp6242 sim:=true
 # 终端 2：启动控制桥接
-ros2 run control_command robot_control_node
-```
+ros2 run control_command_split robot_control_node
 
+ros2 run control_command_split robot_status_publisher_node
+```
 ### 6.2 Start Sensors (`polaris_ultrasound` & `Leptrino`)
 ```bash
 # 超声与追踪
