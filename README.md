@@ -141,7 +141,7 @@ docker exec -it denso_ros2_container bash
 ros2 launch denso_robot_bringup denso_robot_bringup.launch.py model:=vp6242 sim:=true
 # 终端 2：启动控制桥接
 ros2 run control_command_split robot_control_node
-
+# 终端 3：启动 state publisher
 ros2 run control_command_split robot_status_publisher_node
 ```
 ### 6.2 Start Sensors (`polaris_ultrasound` & `Leptrino`)
