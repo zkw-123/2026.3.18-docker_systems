@@ -27,6 +27,7 @@ RUN apt update && apt install -y \
     ros-humble-gazebo-ros \
     ros-humble-gazebo-ros-pkgs \
     ros-humble-gazebo-ros2-control\
+    ros-humble-rmw-cyclonedds-cpp\
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -39,9 +40,9 @@ ENV LANG=en_US.UTF-8 \
 # 初始化 rosdep
 RUN rosdep update
 
-# 创建匹配 host 用户的非 root 用户（UID/GID = 1005）
-ARG USER_ID=1005
-ARG GROUP_ID=1005
+# 创建匹配 host 用户的非 root 用户（UID/GID = 1003）
+ARG USER_ID=1003
+ARG GROUP_ID=1003
 RUN groupadd -g ${GROUP_ID} dockeruser && \
     useradd -m -u ${USER_ID} -g ${GROUP_ID} -s /bin/bash dockeruser && \
     usermod -aG sudo dockeruser && \
