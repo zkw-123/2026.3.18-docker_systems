@@ -1,0 +1,40 @@
+services:
+  polaris_ultrasound:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        USER_ID: 1005
+        GROUP_ID: 1005
+    container_name: polaris_ultrasound
+    tty: true
+    stdin_open: true
+    volumes:
+      # 挂载源代码目录
+      - ./ros2_ws:/workspace
+      # 挂载设备目录
+      - /dev:/dev
+      - ./cyclonedds.xml:/workspace/cyclonedds.xml:ro
+    devices:
+      # 允许访问 Polaris 设备 (通常是 USB 串口)
+      - /dev/ttyUSB0:/dev/ttyUSB0
+      # 允许访问超声设备 (视频捕获设备)
+      - /dev/video0:/dev/video0
+      # 如果有其他视频设备，也可以添加
+      - /dev/video1:/dev/video1
+    network_mode: host
+    ipc: host
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - ROS_DOMAIN_ID=1
+      - XAUTHORITY=/home/$USER/.Xauthority
+      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+      - ROS_LOCALHOST_ONLY=0
+      - CYCLONEDDS_NETWORK_INTERFACE_ADDRESS=lo
+      - CYCLONEDDS_ALLOW_MULTICAST=true
+      - CYCLONEDDS_URI=file:///workspace/cyclonedds.xml
+    user: "1005:1005"
+    privileged: true
+
+
