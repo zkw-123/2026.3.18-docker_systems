@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  denso_ros2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        USER_ID: 1005
+        GROUP_ID: 1005
+    container_name: denso_ros2_container
+    tty: true
+    stdin_open: true
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ${HOME}/.Xauthority:/root/.Xauthority:rw
+      - ./ros2_ws:/workspace
+      - ./cyclonedds.xml:/workspace/cyclonedds.xml:ro
+    network_mode: host
+    ipc: host
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+      - ROS_DOMAIN_ID=1
+      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+      - ROS_LOCALHOST_ONLY=0
+      - CYCLONEDDS_NETWORK_INTERFACE_ADDRESS=lo # 确保这是你的网卡名
+      - CYCLONEDDS_ALLOW_MULTICAST=true
+      - CYCLONEDDS_URI=file:///workspace/cyclonedds.xml
+
+    user: "1005:1005"
